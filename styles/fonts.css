@@ -1,0 +1,12 @@
+/* Font fallback cho hệ thống */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+}
+
+/* Áp dụng font mặc định cho toàn bộ ứng dụng */
+html, body, #root {
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+

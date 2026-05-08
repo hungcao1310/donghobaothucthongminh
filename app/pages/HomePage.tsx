@@ -1,4 +1,4 @@
-import { Plus, Clock, Timer, History, Music, Volume2, Trash2, Edit2, Activity } from "lucide-react";
+import { Plus, Clock, Timer, History, Music, Volume2, Trash2, Edit2, Activity, User } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import { useState, useEffect, useRef } from "react";
 import { useAlarms } from "../contexts/AlarmContext";
@@ -226,6 +226,13 @@ export function HomePage() {
     <div className="min-h-screen p-6 pb-24">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl text-amber">Báo thức thông minh</h1>
+        <button
+          onClick={() => navigate("auth")}
+          className="p-2 rounded-xl bg-[#1a1a1a] border border-white/10 text-white/60 hover:text-amber hover:border-amber/30 transition-all"
+          title="Đăng nhập / Đăng ký"
+        >
+          <User className="w-5 h-5" />
+        </button>
       </div>
 
       <div className="flex flex-col items-center justify-center mb-12">

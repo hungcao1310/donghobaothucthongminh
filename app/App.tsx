@@ -22,6 +22,7 @@ import { TimerRunningPage } from "./pages/TimerRunningPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { SnoozePage } from "./pages/SnoozePage";
 import { HealthPage } from "./pages/HealthPage";
+import { RegisterPage } from "./pages/RegisterPage";
 import { AlarmTrigger } from "./components/AlarmTrigger";
 
 function AppContent() {
@@ -46,6 +47,7 @@ function AppContent() {
       case "history": return <HistoryPage />;
       case "snooze": return <SnoozePage />;
       case "health": return <HealthPage />;
+      case "auth": return <RegisterPage />;
       default: return <HomePage />;
     }
   };
