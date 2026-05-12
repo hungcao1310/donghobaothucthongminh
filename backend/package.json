@@ -9,6 +9,6 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.0",
-    "mssql": "^11.0.1"
+    "mssql": "^9.1.0"
   }
 }

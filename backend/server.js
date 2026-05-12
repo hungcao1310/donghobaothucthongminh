@@ -3,7 +3,7 @@ import cors from "cors";
 import sql from "mssql";
 
 const app = express();
-const PORT = 3001;
+const PORT = 3002;
 
 // Middleware
 app.use(cors());
@@ -11,11 +11,11 @@ app.use(express.json());
 
 // Cấu hình kết nối SQL Server
 const dbConfig = {
-  user: "sa",
+  user: "appuser",
   password: "123456",
   server: "localhost",
   port: 1433,
-  database: "AlarmSystemDB",
+  database: "SmartAlarmDB",
   options: {
     encrypt: false,
     trustServerCertificate: true,
@@ -75,7 +75,7 @@ app.post("/api/register", async (req, res) => {
       const checkResult = await pool
         .request()
         .input("Email", sql.VarChar(150), email)
-        .query("SELECT COUNT(*) as count FROM Users WHERE Email = @Email");
+        .query("SELECT COUNT(*) as count FROM dbo.users WHERE email = @Email");
 
       if (checkResult.recordset[0].count > 0) {
         return res.status(409).json({
@@ -89,16 +89,14 @@ app.post("/api/register", async (req, res) => {
         .request()
         .input("UserName", sql.NVarChar(100), username)
         .input("Email", sql.VarChar(150), email)
-        .input("Password", sql.NVarChar(255), password)
-        .input("FullName", sql.NVarChar(200), fullName || username)
-        .input("Phone", sql.VarChar(20), phone || "")
+        .input("PasswordHash", sql.NVarChar(255), password)
         .query(`
-          INSERT INTO Users (UserName, Email, Password, FullName, Phone)
-          OUTPUT INSERTED.UserID
-          VALUES (@UserName, @Email, @Password, @FullName, @Phone)
+          INSERT INTO dbo.users (username, email, password_hash, created_at)
+          OUTPUT INSERTED.user_id
+          VALUES (@UserName, @Email, @PasswordHash, GETDATE())
         `);
 
-      const userId = result.recordset[0].UserID;
+      const userId = result.recordset[0].user_id;
 
       res.status(201).json({
         success: true,
@@ -157,8 +155,8 @@ app.post("/api/login", async (req, res) => {
       const result = await pool
         .request()
         .input("Email", sql.VarChar(150), email)
-        .input("Password", sql.NVarChar(255), password)
-        .query("SELECT UserID, UserName, Email, FullName FROM Users WHERE Email = @Email AND Password = @Password");
+        .input("PasswordHash", sql.NVarChar(255), password)
+        .query("SELECT user_id, username, email FROM dbo.users WHERE email = @Email AND password_hash = @PasswordHash");
 
       if (result.recordset.length === 0) {
         return res.status(401).json({
@@ -172,10 +170,10 @@ app.post("/api/login", async (req, res) => {
         success: true,
         message: "Đăng nhập thành công!",
         user: {
-          id: user.UserID,
-          username: user.UserName,
-          email: user.Email,
-          fullName: user.FullName,
+          id: user.user_id,
+          username: user.username,
+          email: user.email,
+          fullName: user.username,
         },
       });
     } else {

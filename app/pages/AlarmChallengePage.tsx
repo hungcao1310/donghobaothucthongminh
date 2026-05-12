@@ -4,9 +4,6 @@ import { AlertTriangle } from "lucide-react";
 import { useAlarms } from "../contexts/AlarmContext";
 import { TypingChallenge } from "../components/challenges/TypingChallenge";
 import { PatternChallenge } from "../components/challenges/PatternChallenge";
-import { ShakeChallenge } from "../components/challenges/ShakeChallenge";
-import { WalkChallenge } from "../components/challenges/WalkChallenge";
-import { QRChallenge } from "../components/challenges/QRChallenge";
 import { Delete } from "lucide-react";
 
 // ─── Math sub-component ──────────────────────────────────────────────────────
@@ -137,9 +134,6 @@ const CHALLENGE_META: Record<string, { icon: string; title: string }> = {
   math:    { icon: "🧮", title: "Toán học" },
   typing:  { icon: "⌨️", title: "Gõ văn bản" },
   pattern: { icon: "🧩", title: "Nhớ mẫu" },
-  shake:   { icon: "📱", title: "Lắc điện thoại" },
-  walk:    { icon: "🚶", title: "Đi bộ 100 bước" },
-  qr:      { icon: "📷", title: "Quét QR" },
 };
 
 // ─── Main page ───────────────────────────────────────────────────────────────
@@ -199,9 +193,6 @@ export function AlarmChallengePage() {
       case "math":    return <MathChallenge {...props} />;
       case "typing":  return <TypingChallenge {...props} />;
       case "pattern": return <PatternChallenge {...props} />;
-      case "shake":   return <ShakeChallenge {...props} />;
-      case "walk":    return <WalkChallenge {...props} />;
-      case "qr":      return <QRChallenge {...props} />;
       default:        return <MathChallenge {...props} />;
     }
   };
@@ -271,3 +262,6 @@ export function AlarmChallengePage() {
     </div>
   );
 }
+
+
+

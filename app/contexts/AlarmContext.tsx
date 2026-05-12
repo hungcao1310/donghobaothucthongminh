@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export type ChallengeType = "math" | "typing" | "pattern" | "shake" | "walk" | "qr";
+export type ChallengeType = "math" | "typing" | "pattern";
 
 interface Alarm {
   id: number;
@@ -18,7 +18,6 @@ interface Alarm {
   currentDifficulty?: number;
   failCount?: number;
   volume?: number;
-  autoIncreaseDifficulty?: boolean;
 }
 
 interface AlarmContextType {
@@ -79,20 +78,9 @@ export function AlarmProvider({ children }: { children: ReactNode }) {
   const incrementFailCount = (id: number) => {
     setAlarms(alarms.map(alarm => {
       if (alarm.id === id) {
-        const newFailCount = (alarm.failCount || 0) + 1;
-        const baseDiff = alarm.baseDifficulty || 50;
-
-        // Only increase difficulty if autoIncreaseDifficulty is enabled
-        let newDifficulty = alarm.currentDifficulty || baseDiff;
-        if (alarm.autoIncreaseDifficulty !== false) {
-          const increaseFactor = Math.min(newFailCount * 15, 50);
-          newDifficulty = Math.min(100, baseDiff + increaseFactor);
-        }
-
         return {
           ...alarm,
-          failCount: newFailCount,
-          currentDifficulty: newDifficulty
+          failCount: (alarm.failCount || 0) + 1,
         };
       }
       return alarm;
@@ -105,7 +93,6 @@ export function AlarmProvider({ children }: { children: ReactNode }) {
         return {
           ...alarm,
           failCount: 0,
-          currentDifficulty: alarm.baseDifficulty || 50
         };
       }
       return alarm;

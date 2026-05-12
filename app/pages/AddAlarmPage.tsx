@@ -30,8 +30,7 @@ export function AddAlarmPage() {
       difficulty: formState.difficulty,
       challengeType: formState.challengeType,
       volume: formState.volume,
-      autoIncreaseDifficulty: formState.autoIncreaseDifficulty,
-    });
+        });
     resetForm();
     navigate("");
   };

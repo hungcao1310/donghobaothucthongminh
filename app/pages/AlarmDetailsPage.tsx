@@ -27,8 +27,7 @@ export function AlarmDetailsPage() {
         difficulty: alarm.difficulty || 50,
         challengeType: alarm.challengeType || "math",
         volume: alarm.volume || 80,
-        autoIncreaseDifficulty: alarm.autoIncreaseDifficulty ?? true,
-      });
+            });
     }
   }, [alarm, initForm]);
 
@@ -52,8 +51,7 @@ export function AlarmDetailsPage() {
         difficulty: formState.difficulty,
         challengeType: formState.challengeType,
         volume: formState.volume,
-        autoIncreaseDifficulty: formState.autoIncreaseDifficulty,
-      });
+            });
     }
     navigate("");
   };

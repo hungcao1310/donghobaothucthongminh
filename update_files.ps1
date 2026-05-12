@@ -1,3 +1,5 @@
+# Write AlarmFormContext.tsx
+$formContent = @"
 import { createContext, useContext, useState, ReactNode } from "react";
 
 export type ChallengeType = "math" | "typing" | "pattern";
@@ -26,8 +28,8 @@ const defaultState: AlarmFormState = {
   hour: 7,
   minute: 0,
   days: ["T2", "T3", "T4", "T5", "T6"],
-  label: "Báo thức mới",
-  ringtone: "Nhạc chuông mặc định",
+  label: "Bao thuc moi",
+  ringtone: "Nhac chuong mac dinh",
   smartMode: false,
   difficulty: 50,
   challengeType: "math",
@@ -75,3 +77,8 @@ export function useAlarmForm() {
   }
   return context;
 }
+"@
+
+$formContent | Out-File -FilePath "c:\Users\caova\donghobaothucthongminh\repo\app\contexts\AlarmFormContext.tsx" -Encoding UTF8 -NoNewline
+
+Write-Host "AlarmFormContext.tsx updated"
