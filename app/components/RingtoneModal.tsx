@@ -235,10 +235,12 @@ interface RingtoneModalProps {
   onClose: () => void;
   selectedRingtone: string;
   onSelect: (name: string) => void;
+  onSelectId?: (id: number | null) => void;
+  ringtoneId?: number | null;
 }
 
-export function RingtoneModal({ isOpen, onClose, selectedRingtone, onSelect }: RingtoneModalProps) {
-  const { customRingtones, addCustomRingtone, removeCustomRingtone, setDefaultRingtone, defaultRingtoneId } = useRingtone();
+export function RingtoneModal({ isOpen, onClose, selectedRingtone, onSelect, onSelectId }: RingtoneModalProps) {
+  const { customRingtones, addCustomRingtone, removeCustomRingtone, setDefaultRingtone, defaultRingtoneId, ringtoneList, getRingtoneNameById } = useRingtone();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
@@ -508,32 +510,66 @@ export function RingtoneModal({ isOpen, onClose, selectedRingtone, onSelect }: R
               </div>
             )}
 
-            {/* Built-in ringtones */}
-            {filteredBuiltinRingtones.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  {selectedCategory === "Hot" && <Flame className="w-4 h-4 text-orange-500" />}
-                  <p className="text-xs text-white/50 uppercase tracking-wider">
-                    {selectedCategory === "Tất cả" ? "Thư viện" : selectedCategory}
-                  </p>
-                  {selectedCategory === "Hot" && <Sparkles className="w-3 h-3 text-amber" />}
-                </div>
-                <div className="space-y-2">
-                  {filteredBuiltinRingtones.map((rt) => (
-                    <RingtoneRow
-                      key={rt.id}
-                      label={rt.name}
-                      isSelected={selectedRingtone === rt.name}
-                      isPlaying={playing === rt.id}
-                      onSelect={() => handleSelect(rt.name)}
-                      onPlay={(e) => playBuiltin(rt, e)}
-                    />
-                  ))}
-                </div>
+          {/* DB Ringtones từ CSDL */}
+          {ringtoneList.length > 0 && (
+            <div>
+              <p className="text-xs text-white/50 uppercase tracking-wider mb-3">Nhạc chuông từ CSDL</p>
+              <div className="space-y-2">
+                {ringtoneList.map((rt) => (
+                  <RingtoneRow
+                    key={`db-${rt.id}`}
+                    label={rt.name}
+                    sublabel={rt.filePath ? rt.filePath.split('/').pop() : undefined}
+                    isSelected={selectedRingtone === rt.name}
+                    isPlaying={playing === `db-${rt.id}`}
+                    onSelect={() => {
+                      if (onSelectId) onSelectId(rt.id);
+                      handleSelect(rt.name);
+                    }}
+                    onPlay={(e) => {
+                      e.stopPropagation();
+                      if (playing === `db-${rt.id}`) { stopAllPlayback(); return; }
+                      stopAllPlayback();
+                      setPlaying(`db-${rt.id}`);
+                      if (rt.filePath) {
+                        const audio = new Audio(`/${rt.filePath}`);
+                        audioRef.current = audio;
+                        audio.play().catch(() => {});
+                        audio.onended = () => setPlaying(null);
+                      }
+                    }}
+                  />
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {filteredBuiltinRingtones.length === 0 && filteredCustomRingtones.length === 0 && (
+          {/* Built-in ringtones (tổng hợp âm thanh) */}
+          {filteredBuiltinRingtones.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                {selectedCategory === "Hot" && <Flame className="w-4 h-4 text-orange-500" />}
+                <p className="text-xs text-white/50 uppercase tracking-wider">
+                  {selectedCategory === "Tất cả" ? "Âm thanh tổng hợp" : selectedCategory}
+                </p>
+                {selectedCategory === "Hot" && <Sparkles className="w-3 h-3 text-amber" />}
+              </div>
+              <div className="space-y-2">
+                {filteredBuiltinRingtones.map((rt) => (
+                  <RingtoneRow
+                    key={rt.id}
+                    label={rt.name}
+                    isSelected={selectedRingtone === rt.name}
+                    isPlaying={playing === rt.id}
+                    onSelect={() => handleSelect(rt.name)}
+                    onPlay={(e) => playBuiltin(rt, e)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {ringtoneList.length === 0 && filteredBuiltinRingtones.length === 0 && filteredCustomRingtones.length === 0 && (
               <div className="text-center py-12 text-white/40">
                 <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p>Không tìm thấy nhạc chuông phù hợp</p>

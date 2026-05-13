@@ -1,9 +1,10 @@
 import { useNavigation, useParams } from "../components/SimpleRouter";
 import { ChevronLeft, Music, Repeat, Zap, ChevronUp, ChevronDown, Volume2 } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAlarms } from "../contexts/AlarmContext";
 import { useAlarmForm } from "../contexts/AlarmFormContext";
+import { useRingtone } from "../contexts/RingtoneContext";
 import { RingtoneModal } from "../components/RingtoneModal";
 
 export function AlarmDetailsPage() {
@@ -11,23 +12,29 @@ export function AlarmDetailsPage() {
   const { id } = useParams();
   const { alarms, updateAlarm } = useAlarms();
   const { formState, setFormState, initForm } = useAlarmForm();
+  const { setSelectedRingtoneId } = useRingtone();
+  const initRef = useRef<number | null>(null);
 
   const alarm = alarms.find(a => a.id === Number(id));
 
   useEffect(() => {
-    if (alarm) {
+    if (alarm && initRef.current !== alarm.id) {
+      initRef.current = alarm.id;
+      const hasDays = alarm.days && alarm.days.length > 0;
       initForm({
         id: alarm.id,
         hour: alarm.hour,
         minute: alarm.minute,
         smartMode: alarm.smartMode,
         ringtone: alarm.ringtone,
+        ringtoneId: (alarm as any).ringtoneId || null,
         label: alarm.label,
         days: alarm.days,
         difficulty: alarm.difficulty || 50,
         challengeType: alarm.challengeType || "math",
         volume: alarm.volume || 80,
-            });
+        repeat: hasDays ? "weekly" : "once",
+      });
     }
   }, [alarm, initForm]);
 
@@ -36,7 +43,8 @@ export function AlarmDetailsPage() {
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [showRingtoneModal, setShowRingtoneModal] = useState(false);
 
-  const { hour, minute, smartMode, ringtone, volume, label } = formState;
+  const { hour, minute, smartMode, ringtone, volume, label, days: selectedDays, repeat } = formState;
+  const daysOfWeek = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
   const handleSave = () => {
     if (alarm) {
@@ -48,6 +56,7 @@ export function AlarmDetailsPage() {
         label,
         smartMode,
         ringtone,
+        days: repeat === "once" ? [] : selectedDays,
         difficulty: formState.difficulty,
         challengeType: formState.challengeType,
         volume: formState.volume,
@@ -71,6 +80,8 @@ export function AlarmDetailsPage() {
         onClose={() => setShowRingtoneModal(false)}
         selectedRingtone={ringtone}
         onSelect={(name) => setFormState({ ringtone: name })}
+        onSelectId={(id) => setFormState({ ringtoneId: id })}
+        ringtoneId={formState.ringtoneId}
       />
 
       <div className="flex items-center justify-between mb-8">
@@ -165,6 +176,58 @@ export function AlarmDetailsPage() {
             className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 border border-white/10 focus:border-amber outline-none"
             placeholder="Nhập tên báo thức"
           />
+        </div>
+
+        <div className="bg-[#1a1a1a] rounded-xl px-4 py-4 border border-white/10">
+          <label className="text-sm text-white/60 mb-3 block">Chế độ lặp</label>
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => setFormState({ repeat: "once", days: [] })}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                repeat === "once"
+                  ? 'bg-amber text-black'
+                  : 'bg-[#141414] text-white/60 border border-white/10'
+              }`}
+            >
+              Một lần
+            </button>
+            <button
+              onClick={() => setFormState({ repeat: "weekly" })}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                repeat === "weekly"
+                  ? 'bg-amber text-black'
+                  : 'bg-[#141414] text-white/60 border border-white/10'
+              }`}
+            >
+              Lặp lại
+            </button>
+          </div>
+          {repeat === "weekly" && (
+            <div className="flex gap-2 mt-3">
+              {daysOfWeek.map((day) => {
+                const toggleDay = () => {
+                  if (selectedDays.includes(day)) {
+                    setFormState({ days: selectedDays.filter(d => d !== day) });
+                  } else {
+                    setFormState({ days: [...selectedDays, day] });
+                  }
+                };
+                return (
+                  <button
+                    key={day}
+                    onClick={toggleDay}
+                    className={`flex-1 py-2 rounded-full text-sm transition-colors ${
+                      selectedDays.includes(day)
+                        ? 'bg-amber text-black'
+                        : 'bg-[#141414] text-white/60'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         <div className="bg-[#1a1a1a] rounded-xl px-4 py-4 border border-white/10">
           <div className="flex items-center justify-between mb-4">

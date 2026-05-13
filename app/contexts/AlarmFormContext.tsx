@@ -2,6 +2,8 @@ import { createContext, useContext, useState, ReactNode } from "react";
 
 export type ChallengeType = "math" | "typing" | "pattern";
 
+export type RepeatMode = "once" | "weekly";
+
 interface AlarmFormState {
   id?: number;
   hour: number;
@@ -9,10 +11,12 @@ interface AlarmFormState {
   days: string[];
   label: string;
   ringtone: string;
+  ringtoneId?: number | null;
   smartMode: boolean;
   difficulty: number;
   challengeType: ChallengeType;
   volume: number;
+  repeat: RepeatMode;
 }
 
 interface AlarmFormContextType {
@@ -32,13 +36,13 @@ const defaultState: AlarmFormState = {
   difficulty: 50,
   challengeType: "math",
   volume: 80,
+  repeat: "weekly",
 };
 
 const AlarmFormContext = createContext<AlarmFormContextType | undefined>(undefined);
 
 export function AlarmFormProvider({ children }: { children: ReactNode }) {
   const [formState, setFormStateInternal] = useState<AlarmFormState>(defaultState);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   const setFormState = (updates: Partial<AlarmFormState>) => {
     setFormStateInternal((prev) => ({ ...prev, ...updates }));
@@ -51,14 +55,10 @@ export function AlarmFormProvider({ children }: { children: ReactNode }) {
       hour: now.getHours(),
       minute: now.getMinutes()
     });
-    setIsInitialized(false);
   };
 
   const initForm = (state: Partial<AlarmFormState>) => {
-    if (!isInitialized) {
-      setFormStateInternal({ ...defaultState, ...state });
-      setIsInitialized(true);
-    }
+    setFormStateInternal({ ...defaultState, ...state });
   };
 
   return (

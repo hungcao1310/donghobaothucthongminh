@@ -4,15 +4,17 @@ import { useState } from "react";
 import * as Switch from "@radix-ui/react-switch";
 import { useAlarms } from "../contexts/AlarmContext";
 import { useAlarmForm } from "../contexts/AlarmFormContext";
+import { useRingtone } from "../contexts/RingtoneContext";
 import { RingtoneModal } from "../components/RingtoneModal";
 
 export function AddAlarmPage() {
   const { navigate, goBack } = useNavigation();
   const { addAlarm } = useAlarms();
   const { formState, setFormState, resetForm } = useAlarmForm();
+  const { setSelectedRingtoneId } = useRingtone();
   const [showRingtoneModal, setShowRingtoneModal] = useState(false);
 
-  const { hour, minute, smartMode, label, days: selectedDays, ringtone, volume } = formState;
+  const { hour, minute, smartMode, label, days: selectedDays, ringtone, volume, ringtoneId, repeat } = formState;
 
   const days = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
@@ -22,7 +24,7 @@ export function AddAlarmPage() {
       time,
       hour,
       minute,
-      days: selectedDays,
+      days: repeat === "once" ? [] : selectedDays,
       enabled: true,
       label,
       ringtone,
@@ -50,6 +52,8 @@ export function AddAlarmPage() {
         onClose={() => setShowRingtoneModal(false)}
         selectedRingtone={ringtone}
         onSelect={(name) => setFormState({ ringtone: name })}
+        onSelectId={(id) => setFormState({ ringtoneId: id })}
+        ringtoneId={ringtoneId}
       />
 
       <div className="flex items-center justify-between mb-8">
@@ -133,22 +137,46 @@ export function AddAlarmPage() {
           </div>
 
           <div>
-            <label className="text-sm text-white/60 mb-3 block">Lặp lại</label>
-            <div className="flex gap-2">
-              {days.map((day) => (
-                <button
-                  key={day}
-                  onClick={() => toggleDay(day)}
-                  className={`flex-1 py-2 rounded-full text-sm transition-colors ${
-                    selectedDays.includes(day)
-                      ? 'bg-amber text-black'
-                      : 'bg-[#1a1a1a] text-white/60'
-                  }`}
-                >
-                  {day}
-                </button>
-              ))}
+            <label className="text-sm text-white/60 mb-3 block">Chế độ lặp</label>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setFormState({ repeat: "once", days: [] })}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  repeat === "once"
+                    ? 'bg-amber text-black'
+                    : 'bg-[#1a1a1a] text-white/60 border border-white/10'
+                }`}
+              >
+                Một lần
+              </button>
+              <button
+                onClick={() => setFormState({ repeat: "weekly" })}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  repeat === "weekly"
+                    ? 'bg-amber text-black'
+                    : 'bg-[#1a1a1a] text-white/60 border border-white/10'
+                }`}
+              >
+                Lặp lại
+              </button>
             </div>
+            {repeat === "weekly" && (
+              <div className="flex gap-2">
+                {days.map((day) => (
+                  <button
+                    key={day}
+                    onClick={() => toggleDay(day)}
+                    className={`flex-1 py-2 rounded-full text-sm transition-colors ${
+                      selectedDays.includes(day)
+                        ? 'bg-amber text-black'
+                        : 'bg-[#1a1a1a] text-white/60'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <button onClick={() => setShowRingtoneModal(true)} className="flex items-center justify-between bg-[#1a1a1a] rounded-xl px-4 py-4 border border-white/10 hover:border-white/20 transition-colors">

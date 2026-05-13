@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import * as api from "../services/database";
 
 export interface SleepRecord {
   date: string; // "T2", "T3", etc.
@@ -17,54 +18,92 @@ interface SleepContextType {
 
 const SleepContext = createContext<SleepContextType | undefined>(undefined);
 
-function generateMockData(): SleepRecord[] {
-  const now = new Date();
-  const days: SleepRecord[] = [];
+function calcHours(bedStr: string, wakeStr: string): number {
+  const [bh, bm] = bedStr.split(":").map(Number);
+  const [wh, wm] = wakeStr.split(":").map(Number);
+  let hours = (wh - bh) + (wm - bm) / 60;
+  if (hours < 0) hours += 24;
+  return Math.round(hours * 10) / 10;
+}
+
+function qualityFromHours(hours: number): SleepRecord["quality"] {
+  if (hours >= 8) return "Tốt";
+  if (hours >= 7) return "Khá";
+  if (hours >= 6) return "Trung bình";
+  return "Kém";
+}
+
+function toVnDay(dateStr: string): string {
   const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    const dayIndex = date.getDay();
-    const dayName = dayNames[dayIndex];
-
-    // Generate varied sleep hours (6-9 hours)
-    const baseHours = 7.5;
-    const variance = Math.sin(i * 1.2) * 1.2;
-    const hours = Math.round((baseHours + variance) * 10) / 10;
-
-    const bedHour = 22 + Math.floor(Math.random() * 2); // 22 or 23
-    const bedMin = Math.floor(Math.random() * 30); // 0-29 min
-    const wakeHour = 6 + Math.floor(Math.random() * 2); // 6 or 7
-    const wakeMin = Math.floor(Math.random() * 30); // 0-29 min
-
-    let quality: SleepRecord["quality"] = "Trung bình";
-    if (hours >= 8) quality = "Tốt";
-    else if (hours >= 7) quality = "Khá";
-    else if (hours < 6) quality = "Kém";
-
-    days.push({
-      date: dayName,
-      fullDate: date.toISOString().split("T")[0],
-      hours,
-      quality,
-      bedtime: `${bedHour.toString().padStart(2, "0")}:${bedMin.toString().padStart(2, "0")}`,
-      wakeTime: `${wakeHour.toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
-    });
-  }
-
-  return days;
+  const d = new Date(dateStr);
+  return dayNames[d.getDay()];
 }
 
 export function SleepProvider({ children }: { children: ReactNode }) {
-  const [records] = useState<SleepRecord[]>(generateMockData);
+  const [records, setRecords] = useState<SleepRecord[]>([]);
 
-  const addRecord = (record: SleepRecord) => {
-    // In a real app this would update state
+  useEffect(() => {
+    loadRecords();
+  }, []);
+
+  const loadRecords = async () => {
+    try {
+      const user = api.getUserFromLocal();
+      if (!user) return;
+      const result = await api.fetchSleepRecords();
+      if (result.success && result.records && result.records.length > 0) {
+        const mapped: SleepRecord[] = result.records.map(r => {
+          const bedDate = r.bedtime ? new Date(r.bedtime) : new Date();
+          const wakeDate = r.wakeTime ? new Date(r.wakeTime) : new Date();
+          const bedStr = `${String(bedDate.getHours()).padStart(2, "0")}:${String(bedDate.getMinutes()).padStart(2, "0")}`;
+          const wakeStr = `${String(wakeDate.getHours()).padStart(2, "0")}:${String(wakeDate.getMinutes()).padStart(2, "0")}`;
+          const hours = calcHours(bedStr, wakeStr);
+          return {
+            date: toVnDay(r.logDate || bedDate.toISOString().split("T")[0]),
+            fullDate: r.logDate || bedDate.toISOString().split("T")[0],
+            hours,
+            quality: qualityFromHours(hours),
+            bedtime: bedStr,
+            wakeTime: wakeStr,
+          };
+        });
+        setRecords(mapped);
+      }
+    } catch (err) {
+      console.error("Lỗi tải dữ liệu giấc ngủ:", err);
+    }
+  };
+
+  const addRecord = async (record: SleepRecord) => {
+    try {
+      // Parse bedtime/waketime from the current record
+      const logDate = record.fullDate || new Date().toISOString().split("T")[0];
+      const bedDateTime = `${logDate}T${record.bedtime}:00`;
+      const wakeDateTime = `${logDate}T${record.wakeTime}:00`;
+
+      const result = await api.createSleepRecord({
+        bedtime: bedDateTime,
+        wakeTime: wakeDateTime,
+        quality: record.quality === "Tốt" ? 5 : record.quality === "Khá" ? 4 : record.quality === "Trung bình" ? 3 : 2,
+        logDate,
+      });
+
+      if (result.success) {
+        setRecords(prev => {
+          const exists = prev.find(r => r.fullDate === logDate);
+          if (exists) return prev;
+          return [...prev, record];
+        });
+      }
+    } catch (err) {
+      console.error("Lỗi thêm dữ liệu giấc ngủ:", err);
+    }
   };
 
   const weeklyAverage =
-    Math.round((records.reduce((sum, r) => sum + r.hours, 0) / records.length) * 10) / 10;
+    records.length > 0
+      ? Math.round((records.reduce((sum, r) => sum + r.hours, 0) / records.length) * 10) / 10
+      : 0;
 
   return (
     <SleepContext.Provider value={{ records, addRecord, weeklyAverage }}>
